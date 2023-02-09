@@ -1,0 +1,55 @@
+version: '3.9'
+
+services:
+  # server - subscriber
+  app_server:
+    image: app_server:latest
+    container_name: app_server
+    restart: always
+    volumes:
+      - ./server:/usr/src/app
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    depends_on:
+      - app_nats_server
+      - app_mongodb
+
+  # client - publisher
+  app_client:
+    image: app_client:latest
+    container_name: app_client
+    restart: always
+    volumes:
+      - ./client:/usr/src/app
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    depends_on:
+      - app_nats_server
+
+  # nats server listening for client connections on 4222
+  app_nats_server:
+    image: nats:alpine3.17
+    container_name: app_nats_server
+    restart: always
+    expose:
+      - "4222" # only expose this port internally (NOT forward outside)
+
+  # mongodb database
+  app_mongodb:
+    image: mongo:4.4-bionic
+    container_name: app_mongodb
+    restart: always
+    volumes:
+      - app_mongodb_data:/data/db
+    ports:
+      - "27018:27018"
+    command: --port 27018 # tell mongodb running on this port
+
+volumes:
+  app_mongodb_data: # persist mongodb data
+
+
+
+
